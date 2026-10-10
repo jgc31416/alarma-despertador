@@ -55,7 +55,7 @@ fun AlarmListScreen(
             ExtendedFloatingActionButton(
                 onClick = onAddAlarmClick,
                 icon = { Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_alarm)) },
-                text = { Text("${uiState.alarms.size} / ${uiState.maxCapacity} alarms") },
+                text = { Text(stringResource(R.string.alarms_count, uiState.alarms.size, uiState.maxCapacity)) },
                 containerColor = if (uiState.isCapacityReached) {
                     MaterialTheme.colorScheme.surfaceVariant
                 } else {
@@ -79,7 +79,7 @@ fun AlarmListScreen(
                 EmptyAlarmsPlaceholder()
             } else {
                 Text(
-                    text = "${uiState.alarms.size} alarms configured",
+                    text = stringResource(R.string.alarms_configured, uiState.alarms.size),
                     style = MaterialTheme.typography.bodyLarge
                 )
             }
@@ -88,7 +88,7 @@ fun AlarmListScreen(
 }
 
 @Composable
-fun EmptyAlarmsPlaceholder(
+private fun EmptyAlarmsPlaceholder(
     modifier: Modifier = Modifier
 ) {
     Column(

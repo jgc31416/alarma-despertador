@@ -4,4 +4,6 @@
     <string name="empty_alarms_title">No Alarms Set</string>
     <string name="empty_alarms_subtitle">Tap + to add your first alarm (up to 5)</string>
     <string name="add_alarm">Add Alarm</string>
+    <string name="alarms_count">%1$d / %2$d alarms</string>
+    <string name="alarms_configured">%1$d alarms configured</string>
 </resources>
