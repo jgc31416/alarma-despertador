@@ -22,6 +22,7 @@ An open-source, reliable native Android alarm clock application built with moder
 ## Architecture
 
 See the documentation in `docs/` and the Wayfinder planning artifacts in `.scratch/despertador/`:
+- [Technical Specification](docs/spec.md)
 - [Domain Glossary](CONTEXT.md)
 - [Wayfinder Map](.scratch/despertador/map.md)
 - [Foreground Service & Alarm Research](docs/research/android-alarm-fgs.md)
