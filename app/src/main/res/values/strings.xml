@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Despertador</string>
+    <string name="empty_alarms_title">No Alarms Set</string>
+    <string name="empty_alarms_subtitle">Tap + to add your first alarm (up to 5)</string>
+    <string name="add_alarm">Add Alarm</string>
+</resources>
