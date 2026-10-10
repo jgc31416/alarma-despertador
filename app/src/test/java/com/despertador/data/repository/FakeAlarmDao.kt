@@ -47,4 +47,10 @@ class FakeAlarmDao : AlarmDao {
         alarmsMap.remove(id)
         updateFlow()
     }
+
+    override suspend fun getDistinctAudioPaths(): List<String> =
+        alarmsMap.values.map { it.cachedAudioPath }.filter { it.isNotBlank() }.distinct()
+
+    override suspend fun countAudioPathReferences(path: String): Int =
+        alarmsMap.values.count { it.cachedAudioPath == path }
 }

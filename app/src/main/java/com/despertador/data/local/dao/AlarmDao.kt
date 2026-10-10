@@ -34,4 +34,10 @@ interface AlarmDao {
 
     @Query("DELETE FROM alarms WHERE id = :id")
     suspend fun deleteAlarmById(id: Long)
+
+    @Query("SELECT DISTINCT cachedAudioPath FROM alarms WHERE cachedAudioPath != ''")
+    suspend fun getDistinctAudioPaths(): List<String>
+
+    @Query("SELECT COUNT(*) FROM alarms WHERE cachedAudioPath = :path")
+    suspend fun countAudioPathReferences(path: String): Int
 }

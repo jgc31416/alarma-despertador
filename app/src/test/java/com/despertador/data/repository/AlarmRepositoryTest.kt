@@ -102,4 +102,34 @@ class AlarmRepositoryTest {
         repository.deleteAlarmById(id)
         assertEquals(0, repository.getAlarmCount())
     }
+
+    @Test
+    fun deleteAlarmPrunesOrphanedAudioFileWhenNotReferencedByOtherAlarms() = runTest {
+        var pruneCheckedPath: String? = null
+        val mockStorage = com.despertador.data.audio.AudioStorageManager(
+            filesDir = java.io.File("/tmp"),
+            validator = com.despertador.data.audio.Mp3Validator()
+        )
+        val customRepo = AlarmRepositoryImpl(fakeDao, maxCapacity = 5, audioStorageManager = mockStorage)
+
+        val alarm = Alarm(
+            hour = 6,
+            minute = 30,
+            cachedAudioPath = "/tmp/alarms/track_123.mp3"
+        )
+        val id = customRepo.insertAlarm(alarm).getOrThrow()
+        assertEquals(1, fakeDao.countAudioPathReferences("/tmp/alarms/track_123.mp3"))
+
+        customRepo.deleteAlarm(alarm.copy(id = id))
+        assertEquals(0, fakeDao.countAudioPathReferences("/tmp/alarms/track_123.mp3"))
+    }
+
+    @Test
+    fun sweepOrphanedAudioCallsStorageManagerWithActivePaths() = runTest {
+        val alarm = Alarm(hour = 7, minute = 0, cachedAudioPath = "/files/alarms/track_abc.mp3")
+        repository.insertAlarm(alarm)
+
+        val activePaths = fakeDao.getDistinctAudioPaths()
+        assertEquals(listOf("/files/alarms/track_abc.mp3"), activePaths)
+    }
 }

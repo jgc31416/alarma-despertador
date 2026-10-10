@@ -14,7 +14,20 @@ import com.despertador.ui.screens.AlarmListScreen
 import com.despertador.ui.screens.AlarmListViewModel
 import com.despertador.ui.theme.DespertadorTheme
 
+import androidx.lifecycle.lifecycleScope
+import com.despertador.data.audio.AudioStorageManager
+import com.despertador.data.audio.Mp3Validator
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+
 class MainActivity : ComponentActivity() {
+
+    private val audioStorageManager by lazy {
+        AudioStorageManager(
+            filesDir = applicationContext.filesDir,
+            validator = Mp3Validator()
+        )
+    }
 
     private val database by lazy {
         Room.databaseBuilder(
@@ -25,7 +38,10 @@ class MainActivity : ComponentActivity() {
     }
 
     private val repository by lazy {
-        AlarmRepositoryImpl(database.alarmDao())
+        AlarmRepositoryImpl(
+            alarmDao = database.alarmDao(),
+            audioStorageManager = audioStorageManager
+        )
     }
 
     private val viewModel by viewModels<AlarmListViewModel> {
@@ -35,6 +51,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Cold-start orphan reconciliation sweep
+        lifecycleScope.launch(Dispatchers.IO) {
+            repository.sweepOrphanedAudio()
+        }
         setContent {
             DespertadorTheme {
                 val uiState by viewModel.uiState.collectAsState()

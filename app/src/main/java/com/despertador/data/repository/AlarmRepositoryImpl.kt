@@ -7,9 +7,12 @@ import com.despertador.domain.repository.AlarmRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+import com.despertador.data.audio.AudioStorageManager
+
 class AlarmRepositoryImpl(
     private val alarmDao: AlarmDao,
-    override val maxCapacity: Int = 5
+    override val maxCapacity: Int = 5,
+    private val audioStorageManager: AudioStorageManager? = null
 ) : AlarmRepository {
 
     override val allAlarmsFlow: Flow<List<Alarm>> =
@@ -44,9 +47,27 @@ class AlarmRepositoryImpl(
 
     override suspend fun deleteAlarm(alarm: Alarm) {
         alarmDao.deleteAlarm(AlarmEntity.fromDomain(alarm))
+        pruneAudioIfUnreferenced(alarm.cachedAudioPath)
     }
 
     override suspend fun deleteAlarmById(id: Long) {
+        val entity = alarmDao.getAlarmById(id)
         alarmDao.deleteAlarmById(id)
+        if (entity != null) {
+            pruneAudioIfUnreferenced(entity.cachedAudioPath)
+        }
+    }
+
+    override suspend fun sweepOrphanedAudio() {
+        val activePaths = alarmDao.getDistinctAudioPaths().toSet()
+        audioStorageManager?.sweepOrphanedFiles(activePaths)
+    }
+
+    private suspend fun pruneAudioIfUnreferenced(cachedAudioPath: String) {
+        if (cachedAudioPath.isNotBlank()) {
+            audioStorageManager?.pruneIfUnreferenced(cachedAudioPath) { path ->
+                alarmDao.countAudioPathReferences(path) > 0
+            }
+        }
     }
 }

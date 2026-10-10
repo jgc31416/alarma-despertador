@@ -14,4 +14,5 @@ interface AlarmRepository {
     suspend fun toggleAlarm(id: Long, isEnabled: Boolean)
     suspend fun deleteAlarm(alarm: Alarm)
     suspend fun deleteAlarmById(id: Long)
+    suspend fun sweepOrphanedAudio()
 }
