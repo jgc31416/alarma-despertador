@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Despertador - Jetpack Compose & State Prototype</title>
+  <style>
+    :root {
+      --md-sys-color-primary: #D0BCFF;
+      --md-sys-color-on-primary: #381E72;
+      --md-sys-color-primary-container: #4F378B;
+      --md-sys-color-on-primary-container: #EADDFF;
+      --md-sys-color-surface: #141218;
+      --md-sys-color-on-surface: #E6E0E9;
+      --md-sys-color-surface-variant: #49454F;
+      --md-sys-color-on-surface-variant: #CAC4D0;
+      --md-sys-color-outline: #938F99;
+      --md-sys-color-surface-container: #211F26;
+      --md-sys-color-surface-container-high: #2B2930;
+      --md-sys-color-error: #F2B8B5;
+      --md-sys-color-on-error: #601410;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: #0f0d13; color: var(--md-sys-color-on-surface); display: flex; height: 100vh; overflow: hidden; }
+
+    /* Layout */
+    .container { display: flex; width: 100%; height: 100%; }
+    .device-pane { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+    .state-pane { width: 440px; background: #1a1820; border-left: 1px solid #332f3d; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Phone Device Frame */
+    .phone-frame {
+      width: 380px;
+      height: 760px;
+      background: var(--md-sys-color-surface);
+      border-radius: 40px;
+      border: 8px solid #2e2b36;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      height: 32px;
+      padding: 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--md-sys-color-on-surface-variant);
+    }
+
+    /* App Top Bar */
+    .top-app-bar {
+      height: 56px;
+      padding: 0 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #232029;
+    }
+    .top-app-bar h1 { font-size: 20px; font-weight: 500; }
+    .icon-btn { background: none; border: none; color: inherit; cursor: pointer; padding: 8px; border-radius: 50%; display: flex; align-items: center; }
+    .icon-btn:hover { background: rgba(255, 255, 255, 0.08); }
+
+    /* Content Area */
+    .screen-content { flex: 1; overflow-y: auto; padding: 16px; position: relative; }
+
+    /* Alarm Cards */
+    .alarm-card {
+      background: var(--md-sys-color-surface-container);
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .alarm-card.inactive { opacity: 0.55; }
+    .alarm-card.active { border-color: rgba(208, 188, 255, 0.2); }
+    .alarm-card-header { display: flex; justify-content: space-between; align-items: center; }
+    .alarm-time { font-size: 32px; font-weight: 400; letter-spacing: -0.5px; }
+    .alarm-title { font-size: 14px; color: var(--md-sys-color-on-surface-variant); font-weight: 500; }
+    .alarm-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+    .days-row { display: flex; gap: 4px; }
+    .day-chip { font-size: 11px; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: #2f2c36; color: #888; }
+    .day-chip.selected { background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); font-weight: 700; }
+    .audio-badge { font-size: 11px; background: rgba(208, 188, 255, 0.12); color: var(--md-sys-color-primary); padding: 3px 8px; border-radius: 12px; }
+
+    /* Switch */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 26px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #3b3744; transition: .3s; border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px;
+      background-color: white; transition: .3s; border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--md-sys-color-primary); }
+    input:checked + .slider:before { transform: translateX(18px); background-color: var(--md-sys-color-on-primary); }
+
+    /* FAB */
+    .fab-container { position: absolute; bottom: 24px; right: 24px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .fab-counter { font-size: 11px; font-weight: 600; color: var(--md-sys-color-outline); background: rgba(0,0,0,0.6); padding: 2px 8px; border-radius: 10px; }
+    .fab {
+      width: 56px; height: 56px; border-radius: 16px; background: var(--md-sys-color-primary-container);
+      color: var(--md-sys-color-on-primary-container); border: none; font-size: 28px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      transition: all 0.2s;
+    }
+    .fab:disabled { background: #333; color: #666; cursor: not-allowed; box-shadow: none; }
+
+    /* Bottom Sheet / Editor */
+    .modal-overlay {
+      position: absolute; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(2px);
+      display: none; flex-direction: column; justify-content: flex-end; z-index: 10;
+    }
+    .bottom-sheet {
+      background: var(--md-sys-color-surface-container-high); border-radius: 28px 28px 0 0;
+      padding: 24px; display: flex; flex-direction: column; gap: 16px; max-height: 90%;
+    }
+    .sheet-header { display: flex; justify-content: space-between; align-items: center; }
+    .sheet-title { font-size: 18px; font-weight: 500; }
+    .text-input {
+      background: #1e1c24; border: 1px solid var(--md-sys-color-outline); border-radius: 8px;
+      padding: 10px 14px; color: white; font-size: 14px; width: 100%;
+    }
+    .time-picker-row { display: flex; justify-content: center; gap: 8px; align-items: center; }
+    .time-input {
+      width: 70px; height: 60px; font-size: 32px; text-align: center; background: #1e1c24;
+      border: 1px solid var(--md-sys-color-primary); border-radius: 12px; color: white;
+    }
+    .btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+    .btn { padding: 10px 18px; border-radius: 20px; border: none; font-weight: 600; cursor: pointer; font-size: 13px; }
+    .btn-filled { background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
+    .btn-tonal { background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface); }
+    .btn-danger { background: var(--md-sys-color-error); color: var(--md-sys-color-on-error); }
+
+    /* Full-Screen Ringing Screen */
+    .ringing-screen {
+      position: absolute; inset: 0; background: #0c0a10; z-index: 20; display: none;
+      flex-direction: column; align-items: center; justify-content: space-between; padding: 60px 24px 50px;
+    }
+    .ringing-clock { font-size: 64px; font-weight: 300; letter-spacing: -2px; }
+    .ringing-title { font-size: 24px; font-weight: 500; color: var(--md-sys-color-primary); }
+    .gentle-wake-box {
+      width: 100%; background: #1f1d26; border-radius: 16px; padding: 14px; display: flex;
+      flex-direction: column; gap: 8px;
+    }
+    .progress-bar-bg { height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; width: 20%; background: var(--md-sys-color-primary); transition: width 0.5s ease; }
+    .ringing-actions { display: flex; flex-direction: column; gap: 14px; width: 100%; }
+    .btn-dismiss { height: 60px; border-radius: 30px; font-size: 18px; font-weight: 700; background: var(--md-sys-color-error); color: var(--md-sys-color-on-error); border: none; cursor: pointer; }
+    .btn-snooze { height: 50px; border-radius: 25px; font-size: 15px; font-weight: 600; background: #302d38; color: white; border: 1px solid #4a4555; cursor: pointer; }
+
+    /* State Inspector Pane */
+    .state-header { padding: 16px; border-bottom: 1px solid #332f3d; display: flex; justify-content: space-between; align-items: center; }
+    .state-header h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: var(--md-sys-color-primary); }
+    .tab-row { display: flex; background: #141219; border-bottom: 1px solid #332f3d; }
+    .tab-btn { flex: 1; padding: 10px; border: none; background: none; color: #888; cursor: pointer; font-size: 12px; font-weight: 600; }
+    .tab-btn.active { color: var(--md-sys-color-primary); border-bottom: 2px solid var(--md-sys-color-primary); }
+    .state-content { flex: 1; padding: 14px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+    pre { background: #110f16; padding: 12px; border-radius: 8px; border: 1px solid #292533; color: #b8b2c4; overflow-x: auto; line-height: 1.4; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Interactive Mobile Device Frame -->
+  <div class="device-pane">
+    <div class="phone-frame">
+      <!-- Status bar -->
+      <div class="status-bar">
+        <span>07:22</span>
+        <span>📶 🔋 100%</span>
+      </div>
+
+      <!-- Main Top Bar -->
+      <div class="top-app-bar">
+        <h1>Despertador</h1>
+        <div>
+          <button class="icon-btn" onclick="openSettings()" title="Settings">⚙️</button>
+        </div>
+      </div>
+
+      <!-- Screen Content (Alarm List) -->
+      <div class="screen-content" id="alarmListContainer">
+        <div id="alarmsList"></div>
+
+        <!-- FAB (Capped at 5) -->
+        <div class="fab-container">
+          <span class="fab-counter" id="slotCounter">2 / 5 alarms</span>
+          <button class="fab" id="addAlarmFab" onclick="openEditor(null)" title="Add Alarm">+</button>
+        </div>
+      </div>
+
+      <!-- Editor Modal -->
+      <div class="modal-overlay" id="editorModal">
+        <div class="bottom-sheet">
+          <div class="sheet-header">
+            <h3 class="sheet-title" id="editorTitle">Edit Alarm</h3>
+            <button class="icon-btn" onclick="closeEditor()">✕</button>
+          </div>
+
+          <!-- Time Picker -->
+          <div class="time-picker-row">
+            <input type="number" id="inputHour" class="time-input" min="0" max="23" value="07">:
+            <input type="number" id="inputMinute" class="time-input" min="0" max="59" value="30">
+          </div>
+
+          <!-- Alarm Label -->
+          <input type="text" id="inputLabel" class="text-input" placeholder="Alarm Name (e.g. Work, Gym)">
+
+          <!-- Day of week recurrence -->
+          <div>
+            <div style="font-size: 12px; color: #aaa; margin-bottom: 6px;">Repeat Days</div>
+            <div class="days-row" id="editorDaysRow"></div>
+          </div>
+
+          <!-- Audio Track selection -->
+          <div style="background: #23202b; padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-size: 12px; color: #888;">Audio Track (MP3)</div>
+              <div style="font-size: 13px; font-weight: 500;" id="currentAudioName">morning_vibes.mp3</div>
+            </div>
+            <button class="btn btn-tonal" onclick="mockPickMp3()">Select File</button>
+          </div>
+
+          <!-- Actions -->
+          <div class="btn-row">
+            <button class="btn btn-danger" id="btnDeleteAlarm" style="display: none;" onclick="deleteCurrentAlarm()">Delete</button>
+            <button class="btn btn-tonal" onclick="closeEditor()">Cancel</button>
+            <button class="btn btn-filled" onclick="saveAlarm()">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Full-Screen Ringing Activity -->
+      <div class="ringing-screen" id="ringingScreen">
+        <div style="text-align: center;">
+          <div style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: #aaa;">Alarm Ringing</div>
+          <div class="ringing-clock" id="ringingClock">07:30</div>
+          <div class="ringing-title" id="ringingLabel">Morning Routine</div>
+          <div style="font-size: 13px; color: #888; margin-top: 6px;" id="ringingAudioTrack">🎵 morning_vibes.mp3</div>
+        </div>
+
+        <!-- Gentle Wake Escalation Meter -->
+        <div class="gentle-wake-box">
+          <div style="display: flex; justify-content: space-between; font-size: 11px;">
+            <span>Gentle Wake (Escalating)</span>
+            <span id="wakeVolumeLabel">20% Volume</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="wakeVolumeFill"></div>
+          </div>
+        </div>
+
+        <!-- Ringing Actions -->
+        <div class="ringing-actions">
+          <button class="btn-snooze" onclick="snoozeAlarm()">Snooze (<span id="snoozeMinLabel">10</span> min)</button>
+          <button class="btn-dismiss" onclick="dismissAlarm()">DISMISS</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- State & Architecture Inspector -->
+  <div class="state-pane">
+    <div class="state-header">
+      <h2>Architecture & State</h2>
+      <button class="btn btn-tonal" style="padding: 4px 8px; font-size: 11px;" onclick="resetDemo()">Reset State</button>
+    </div>
+
+    <div class="tab-row">
+      <button class="tab-btn active" id="tabUiState" onclick="switchTab('uiState')">Compose UI State</button>
+      <button class="tab-btn" id="tabEntities" onclick="switchTab('entities')">Room Entities</button>
+      <button class="tab-btn" id="tabArchitecture" onclick="switchTab('architecture')">Seams & Contracts</button>
+    </div>
+
+    <div class="state-content" id="stateInspectorContent">
+      <pre id="statePre"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Domain state
+  let alarms = [
+    { id: 1, hour: 7, minute: 0, label: "Workdays Wakeup", days: [1, 2, 3, 4, 5], enabled: true, audioFileName: "sunrise_ambient.mp3", sha256: "e3b0c442...a98" },
+    { id: 2, hour: 8, minute: 30, label: "Weekend Brunch", days: [6, 0], enabled: false, audioFileName: "acoustic_guitar.mp3", sha256: "8d969eef...b10" }
+  ];
+
+  let settings = {
+    snoozeDurationMinutes: 10,
+    gentleWakeDurationSeconds: 30
+  };
+
+  let activeEditingId = null;
+  let currentEditingDays = [1, 2, 3, 4, 5];
+  let currentAudioFile = "sunrise_ambient.mp3";
+  let activeRingingAlarm = null;
+  let gentleWakeTimer = null;
+  let activeTab = 'uiState';
+
+  const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+  function pad(n) { return n < 10 ? '0' + n : n; }
+
+  function renderAlarms() {
+    const listEl = document.getElementById('alarmsList');
+    listEl.innerHTML = '';
+
+    alarms.forEach(alarm => {
+      const card = document.createElement('div');
+      card.className = `alarm-card ${alarm.enabled ? 'active' : 'inactive'}`;
+
+      let daysHtml = dayNames.map((d, idx) => {
+        const isSel = alarm.days.includes(idx);
+        return `<span class="day-chip ${isSel ? 'selected' : ''}">${d}</span>`;
+      }).join('');
+
+      card.innerHTML = `
+        <div class="alarm-card-header">
+          <div>
+            <div class="alarm-time">${pad(alarm.hour)}:${pad(alarm.minute)}</div>
+            <div class="alarm-title">${alarm.label || 'Alarm'}</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" ${alarm.enabled ? 'checked' : ''} onchange="toggleAlarm(${alarm.id}, this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="alarm-footer">
+          <div class="days-row">${daysHtml}</div>
+          <span class="audio-badge">🎵 ${alarm.audioFileName}</span>
+        </div>
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+          <button class="btn btn-tonal" style="padding: 4px 10px; font-size: 11px;" onclick="openEditor(${alarm.id})">Edit</button>
+          <button class="btn btn-tonal" style="padding: 4px 10px; font-size: 11px; background: rgba(208, 188, 255, 0.15);" onclick="simulateTrigger(${alarm.id})">⚡ Test Alarm</button>
+        </div>
+      `;
+      listEl.appendChild(card);
+    });
+
+    // Update Counter & FAB cap
+    const counterEl = document.getElementById('slotCounter');
+    const fabEl = document.getElementById('addAlarmFab');
+    counterEl.innerText = `${alarms.length} / 5 alarms`;
+    if (alarms.length >= 5) {
+      fabEl.disabled = true;
+      counterEl.style.color = '#F2B8B5';
+      counterEl.innerText = '5 / 5 (Capacity Reached)';
+    } else {
+      fabEl.disabled = false;
+      counterEl.style.color = 'var(--md-sys-color-outline)';
+    }
+
+    updateInspector();
+  }
+
+  function toggleAlarm(id, enabled) {
+    const a = alarms.find(x => x.id === id);
+    if (a) a.enabled = enabled;
+    renderAlarms();
+  }
+
+  function openEditor(id) {
+    activeEditingId = id;
+    const modal = document.getElementById('editorModal');
+    const title = document.getElementById('editorTitle');
+    const btnDel = document.getElementById('btnDeleteAlarm');
+
+    if (id) {
+      const a = alarms.find(x => x.id === id);
+      title.innerText = 'Edit Alarm';
+      document.getElementById('inputHour').value = a.hour;
+      document.getElementById('inputMinute').value = a.minute;
+      document.getElementById('inputLabel').value = a.label;
+      currentEditingDays = [...a.days];
+      currentAudioFile = a.audioFileName;
+      btnDel.style.display = 'block';
+    } else {
+      title.innerText = 'New Alarm';
+      document.getElementById('inputHour').value = '08';
+      document.getElementById('inputMinute').value = '00';
+      document.getElementById('inputLabel').value = '';
+      currentEditingDays = [1, 2, 3, 4, 5];
+      currentAudioFile = "default_bell.mp3";
+      btnDel.style.display = 'none';
+    }
+
+    document.getElementById('currentAudioName').innerText = currentAudioFile;
+    renderEditorDays();
+    modal.style.display = 'flex';
+    updateInspector();
+  }
+
+  function renderEditorDays() {
+    const row = document.getElementById('editorDaysRow');
+    row.innerHTML = dayNames.map((d, idx) => {
+      const isSel = currentEditingDays.includes(idx);
+      return `<button type="button" class="day-chip ${isSel ? 'selected' : ''}" style="cursor: pointer;" onclick="toggleEditorDay(${idx})">${d}</button>`;
+    }).join('');
+  }
+
+  function toggleEditorDay(day) {
+    if (currentEditingDays.includes(day)) {
+      currentEditingDays = currentEditingDays.filter(d => d !== day);
+    } else {
+      currentEditingDays.push(day);
+    }
+    renderEditorDays();
+    updateInspector();
+  }
+
+  function mockPickMp3() {
+    const mocks = ["epic_orchestral.mp3", "rainy_jazz.mp3", "lofi_morning.mp3", "heavy_bass.mp3"];
+    const pick = mocks[Math.floor(Math.random() * mocks.length)];
+    currentAudioFile = pick;
+    document.getElementById('currentAudioName').innerText = pick + " (Cached to filesDir/)";
+    updateInspector();
+  }
+
+  function saveAlarm() {
+    const hour = parseInt(document.getElementById('inputHour').value, 10);
+    const minute = parseInt(document.getElementById('inputMinute').value, 10);
+    const label = document.getElementById('inputLabel').value || "Alarm";
+
+    if (activeEditingId) {
+      const a = alarms.find(x => x.id === activeEditingId);
+      if (a) {
+        a.hour = hour;
+        a.minute = minute;
+        a.label = label;
+        a.days = currentEditingDays;
+        a.audioFileName = currentAudioFile;
+      }
+    } else {
+      if (alarms.length >= 5) return alert("Maximum 5 alarms allowed!");
+      alarms.push({
+        id: Date.now(),
+        hour,
+        minute,
+        label,
+        days: currentEditingDays,
+        enabled: true,
+        audioFileName: currentAudioFile,
+        sha256: "mock_" + Math.random().toString(16).substr(2, 8)
+      });
+    }
+
+    closeEditor();
+    renderAlarms();
+  }
+
+  function deleteCurrentAlarm() {
+    if (!activeEditingId) return;
+    alarms = alarms.filter(x => x.id !== activeEditingId);
+    closeEditor();
+    renderAlarms();
+  }
+
+  function closeEditor() {
+    document.getElementById('editorModal').style.display = 'none';
+    activeEditingId = null;
+    updateInspector();
+  }
+
+  // Ringing Flow
+  function simulateTrigger(id) {
+    const a = alarms.find(x => x.id === id);
+    if (!a) return;
+    activeRingingAlarm = a;
+
+    const screen = document.getElementById('ringingScreen');
+    document.getElementById('ringingClock').innerText = `${pad(a.hour)}:${pad(a.minute)}`;
+    document.getElementById('ringingLabel').innerText = a.label;
+    document.getElementById('ringingAudioTrack').innerText = `🎵 ${a.audioFileName}`;
+    document.getElementById('snoozeMinLabel').innerText = settings.snoozeDurationMinutes;
+
+    // Reset volume progress
+    const fill = document.getElementById('wakeVolumeFill');
+    const label = document.getElementById('wakeVolumeLabel');
+    fill.style.width = '20%';
+    label.innerText = '20% Volume';
+
+    screen.style.display = 'flex';
+
+    // Simulate 30s gentle wake in 6 steps
+    let currentVol = 20;
+    if (gentleWakeTimer) clearInterval(gentleWakeTimer);
+    gentleWakeTimer = setInterval(() => {
+      if (currentVol < 100) {
+        currentVol += 16;
+        if (currentVol > 100) currentVol = 100;
+        fill.style.width = currentVol + '%';
+        label.innerText = currentVol + '% Volume';
+      } else {
+        clearInterval(gentleWakeTimer);
+      }
+    }, 1000);
+
+    updateInspector();
+  }
+
+  function dismissAlarm() {
+    clearInterval(gentleWakeTimer);
+    document.getElementById('ringingScreen').style.display = 'none';
+    activeRingingAlarm = null;
+    updateInspector();
+  }
+
+  function snoozeAlarm() {
+    clearInterval(gentleWakeTimer);
+    alert(`Alarm snoozed for ${settings.snoozeDurationMinutes} minutes! Rescheduled via AlarmManager.setAlarmClock()`);
+    document.getElementById('ringingScreen').style.display = 'none';
+    activeRingingAlarm = null;
+    updateInspector();
+  }
+
+  function openSettings() {
+    const newDur = prompt("Set global snooze duration in minutes (5, 10, 15, 20):", settings.snoozeDurationMinutes);
+    if (newDur && !isNaN(newDur)) {
+      settings.snoozeDurationMinutes = parseInt(newDur, 10);
+      renderAlarms();
+    }
+  }
+
+  function resetDemo() {
+    alarms = [
+      { id: 1, hour: 7, minute: 0, label: "Workdays Wakeup", days: [1, 2, 3, 4, 5], enabled: true, audioFileName: "sunrise_ambient.mp3", sha256: "e3b0c442...a98" },
+      { id: 2, hour: 8, minute: 30, label: "Weekend Brunch", days: [6, 0], enabled: false, audioFileName: "acoustic_guitar.mp3", sha256: "8d969eef...b10" }
+    ];
+    renderAlarms();
+  }
+
+  function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById('tabUiState').className = `tab-btn ${tab === 'uiState' ? 'active' : ''}`;
+    document.getElementById('tabEntities').className = `tab-btn ${tab === 'entities' ? 'active' : ''}`;
+    document.getElementById('tabArchitecture').className = `tab-btn ${tab === 'architecture' ? 'active' : ''}`;
+    updateInspector();
+  }
+
+  function updateInspector() {
+    const pre = document.getElementById('statePre');
+    if (activeTab === 'uiState') {
+      pre.innerText = JSON.stringify({
+        activeScreen: activeRingingAlarm ? "RingingActivity (Full Screen)" : (activeEditingId !== null ? "AlarmEditorBottomSheet" : "AlarmListScreen"),
+        slotCapacity: {
+          currentCount: alarms.length,
+          maxCapacity: 5,
+          canAddAlarm: alarms.length < 5
+        },
+        globalSettings: settings,
+        activeRingingState: activeRingingAlarm ? {
+          alarmId: activeRingingAlarm.id,
+          label: activeRingingAlarm.label,
+          audioStream: "USAGE_ALARM",
+          audioAttributes: { usage: "USAGE_ALARM", contentType: "CONTENT_TYPE_SONIFICATION" },
+          gentleWakeActive: true
+        } : null
+      }, null, 2);
+    } else if (activeTab === 'entities') {
+      pre.innerText = JSON.stringify({
+        tableName: "alarms",
+        records: alarms.map(a => ({
+          id: a.id,
+          hour: a.hour,
+          minute: a.minute,
+          label: a.label,
+          daysOfWeekMask: a.days,
+          isEnabled: a.enabled,
+          cachedAudioPath: `filesDir/alarms/track_${a.sha256}.mp3`,
+          originalFileName: a.audioFileName
+        }))
+      }, null, 2);
+    } else {
+      pre.innerText = `// Seams & Interfaces in Clean Architecture
+
+1. AlarmScheduler:
+   fun schedule(alarm: AlarmEntity)
+   fun cancel(alarmId: Long)
+   Uses: AlarmManager.setAlarmClock()
+
+2. AudioStorageManager:
+   suspend fun cacheMediaUri(uri: Uri): Result<CachedAudioFile>
+   suspend fun pruneOrphans(activeTracks: List<String>)
+
+3. AlarmPlaybackService : Service()
+   ForegroundServiceType = mediaPlayback
+   Engine = AndroidX Media3 ExoPlayer
+   AudioAttributes = USAGE_ALARM
+
+4. AlarmReceiver : BroadcastReceiver()
+   Handles: ALARM_TRIGGER, BOOT_COMPLETED, TIMEZONE_CHANGED`;
+    }
+  }
+
+  // Initialize
+  renderAlarms();
+</script>
+
+</body>
+</html>
