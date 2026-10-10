@@ -6,4 +6,9 @@
     <string name="add_alarm">Add Alarm</string>
     <string name="alarms_count">%1$d / %2$d alarms</string>
     <string name="alarms_configured">%1$d alarms configured</string>
+    <string name="default_alarm_label">Alarm</string>
+    <string name="no_audio_selected">Default sound</string>
+    <string name="delete_alarm">Delete Alarm</string>
+    <string name="enable_alarm">Toggle alarm state</string>
+    <string name="capacity_reached_message">Maximum of 5 alarms reached</string>
 </resources>
