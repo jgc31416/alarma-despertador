@@ -25,8 +25,16 @@ The state where an alarm has triggered and is actively playing audio in a loop o
 _Avoid_: Alerting, sounding, going off.
 
 **Snooze**:
-A temporary deferral of an active ringing alarm, rescheduling it to ring again after a preset interval.
+A temporary deferral of an active ringing alarm, rescheduling it to ring again after the globally configured snooze interval.
 _Avoid_: Delay, pause, postpone.
+
+**Gentle Wake**:
+An audio escalation mode that begins playback at 20% volume and ramps to full target stream volume over 30 seconds.
+_Avoid_: Fade-in, volume ramp, gradual alarm.
+
+**Global Settings**:
+Application-wide preferences governing shared alarm behavior, including the default snooze duration.
+_Avoid_: Configuration, options, preferences.
 
 **Dismiss**:
 The user action that stops the active ringing state and schedules the next recurrence (or deactivates the alarm if non-recurring).
