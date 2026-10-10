@@ -17,6 +17,7 @@ An end-to-end technical specification (`spec.md`), verified domain model (`CONTE
 - [Research In-App MP3 Caching and ExoPlayer/MediaPlayer Lifecycle](issues/02-research-audio-playback-and-caching.md): Copy SAF stream into `context.filesDir` with SHA-256 deduplication and header validation; use AndroidX Media3 ExoPlayer for seamless gapless looping.
 - [Scaffold GPLv3 License and Git Baseline](issues/03-task-gplv3-license-and-git-scaffold.md): Added GPLv3 LICENSE, Android .gitignore, and project README.md.
 - [Decide Snooze Duration and Volume Behavior](issues/04-grilling-snooze-and-volume-policy.md): Global configurable snooze interval; unlimited snooze count; 30s gentle volume ramp from 20%; respects system alarm stream volume.
+- [Prototype Jetpack Compose UI Screens for Alarm List and Ringing Activity](issues/05-prototype-compose-ui-wireframes.md): Interactive Material 3 Compose wireframes on branch `prototype/compose-ui`; validated dynamic 5-cap FAB, bottom sheet editor, and full-screen ringing screen.
 
 ## Not yet specified
 
