@@ -130,6 +130,6 @@ Tests must verify external observable behavior across system seams rather than p
 
 ## Further Notes
 
-- The project repository is initialized with GPLv3 license terms in [LICENSE](file:///home/jesus/code/home/despertador/LICENSE) and git ignore rules in [.gitignore](file:///home/jesus/code/home/despertador/.gitignore).
+- The project repository is initialized with GPLv3 license terms in [LICENSE](../LICENSE) and git ignore rules in [.gitignore](../.gitignore).
 - All architectural research findings and Android 14/15 permission nuances are documented in `docs/research/`.
 - The interactive UI prototype is archived on branch `prototype/compose-ui` for layout and interaction reference.
