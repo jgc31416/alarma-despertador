@@ -1,5 +1,6 @@
 package com.despertador.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,13 +45,17 @@ import com.despertador.R
 import com.despertador.domain.model.Alarm
 import com.despertador.domain.model.DayOfWeek
 
+import androidx.compose.material.icons.filled.Settings
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmListScreen(
     uiState: AlarmListUiState = AlarmListUiState(),
     onAddAlarmClick: () -> Unit = {},
+    onAlarmClick: (Alarm) -> Unit = {},
     onToggleAlarm: (Alarm, Boolean) -> Unit = { _, _ -> },
     onDeleteAlarm: (Alarm) -> Unit = {},
+    onSettingsClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -62,6 +67,14 @@ fun AlarmListScreen(
                         text = stringResource(id = R.string.app_name),
                         fontWeight = FontWeight.Bold
                     )
+                },
+                actions = {
+                    IconButton(onClick = onSettingsClick) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.settings_title)
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
@@ -114,6 +127,7 @@ fun AlarmListScreen(
                 ) { alarm ->
                     AlarmCard(
                         alarm = alarm,
+                        onClick = { onAlarmClick(alarm) },
                         onToggle = { isEnabled -> onToggleAlarm(alarm, isEnabled) },
                         onDelete = { onDeleteAlarm(alarm) }
                     )
@@ -126,12 +140,15 @@ fun AlarmListScreen(
 @Composable
 fun AlarmCard(
     alarm: Alarm,
-    onToggle: (Boolean) -> Unit,
-    onDelete: () -> Unit,
+    onClick: () -> Unit = {},
+    onToggle: (Boolean) -> Unit = {},
+    onDelete: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = if (alarm.isEnabled) {
                 MaterialTheme.colorScheme.surfaceVariant
